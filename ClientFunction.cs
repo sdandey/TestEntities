@@ -143,11 +143,11 @@ namespace Company.Function
 
 
         /**
-            Monitor context would periodically call databricks API and sync the ContextState and CommandState for all the active Job Running
+            Monitor context would periodically every 5 minutes call databricks API and sync the ContextState and CommandState for all the active Job Running
         */
         [FunctionName(nameof(MonitorContext))]
         public static IActionResult MonitorContext(
-            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
+            [TimerTrigger("0 */5 * * * *")]TimerInfo monitorTimer,     
             [DurableClient] IDurableEntityClient durableEntityClient,
             ILogger log)
         {
