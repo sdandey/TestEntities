@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using TestEntities;
 using System.Threading;
+using System.Collections.Generic;
 
 namespace Company.Function
 {
@@ -27,7 +28,7 @@ namespace Company.Function
         */    
 
         [FunctionName(nameof(DatabricksClusterStartup))]
-        public static async Task DatabricksClusterStartup(
+        public static async Task<IActionResult> DatabricksClusterStartup(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             [DurableClient] IDurableEntityClient durableEntityClient,
             ILogger log)
@@ -72,8 +73,8 @@ namespace Company.Function
 
             for (int i = 0; i < numberofContexts; i++)
             {
-                entityKey = "clusterId:" + clusterId + "-" + "contextId:" + i;
-                var entity = new EntityId(nameof(ContextEntity), );
+                entityKey = "clusterId:" + clusterId + "|" + "contextId:" + i;
+                var entity = new EntityId(nameof(ContextEntity), entityKey);
                 await durableEntityClient.SignalEntityAsync(entity, nameof(ContextEntity.SetCluster), entityKey);
             }
 
@@ -83,11 +84,14 @@ namespace Company.Function
             */
             for (int i = 0; i < numberofContexts; i++)
             {
-                entityKey = "clusterId:" + clusterId + "-" + "contextId:" + i;
+                entityKey = "clusterId:" + clusterId + "|" + "contextId:" + i;
                 var entity = new EntityId(nameof(ContextEntity), entityKey);
                 durableEntityClient.SignalEntityAsync(entity, nameof(ContextEntity.CreateContext));
             }
             
+            var name = "DatabricksClusterStartup";
+            string responseMessage = $"Http Trigger executed successfully the function {name}";
+            return new OkObjectResult(responseMessage);
 
         }
 
@@ -113,31 +117,68 @@ namespace Company.Function
             // EntityQuery query = new EntityQuery();
             // var entityQueryResult = await durableEntityClient.ListEntitiesAsync(new EntityQuery(), cancellationToken);    
  
+            var entityId = "<<Avaialble Context Entity Id value for e.g.,  clusterId:0125-171110|contextId:1>>";
 
+            var availableContextEntityId = new EntityId(nameof(ContextEntity), entityId);
  
+
+            /**
+                for quick testing use the following payload
+                Println("Hello");
+
+                Actual Job Submission would look like below.
+                com.deloitte.cortex.sparkdataingestion.ProdApplicationContext(env).main.runActionJobResultString("job1", jobPayload, tokenString)
+
+
+            **/
             String payload = "payload from Rest API POst";
-            String userToken ="<PAT TOken Here>";
-            var entity = new EntityId(nameof(ContextEntity), "<ClusterID>-<ContextID>");
-            await durableEntityClient.SignalEntityAsync(entity, nameof(ContextEntity.RunCommand), payload,userToken);
+            String userToken ="<Databricks PAT TOken Here>";
+            await durableEntityClient.SignalEntityAsync(availableContextEntityId, nameof(ContextEntity.RunCommand), payload,userToken);
 
             var name = "JobProcessor";
-            string responseMessage = string.IsNullOrEmpty(name)
-               ? "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
-               : $"Hello, {name}. This HTTP triggered function executed successfully.";
+            string responseMessage = $"Http Trigger executed successfully the function {name}";
             return new OkObjectResult(responseMessage);
 
         }
 
+
+        /**
+            Monitor context would periodically call databricks API and sync the ContextState and CommandState for all the active Job Running
+        */
         [FunctionName(nameof(MonitorContext))]
         public static IActionResult MonitorContext(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             [DurableClient] IDurableEntityClient durableEntityClient,
             ILogger log)
         {
+
+            
+            List<string> contextEntityIds = new List<string>();
+            //use entity query model and query all the context Entity Ids.
+
+
+            /*
+                Update Command State will call databricks API and set the commandState as per the response 
+            */
+            contextEntityIds.ForEach(entityId => {
+                Console.WriteLine($"Signal commandState for {entityId}");
+                var entity = new EntityId(nameof(ContextEntity), entityId);
+                durableEntityClient.SignalEntityAsync(entity, nameof(ContextEntity.UpdateCommandStatus));
+            });
+
+            /*
+                Update Context State will call databricks API and set the ContextState as per the response 
+            */
+
+             contextEntityIds.ForEach(entityId => {
+                Console.WriteLine($"Signal commandState for {entityId}");
+                var entity = new EntityId(nameof(ContextEntity), entityId);
+                durableEntityClient.SignalEntityAsync(entity, nameof(ContextEntity.UpdateContextState));
+            });
+
+
             var name = "MonitorContext";
-            string responseMessage = string.IsNullOrEmpty(name)
-               ? "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
-               : $"Hello, {name}. This HTTP triggered function executed successfully.";
+            string responseMessage = $"Http Trigger executed successfully the function {name}";
             return new OkObjectResult(responseMessage);
 
         }
