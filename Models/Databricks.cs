@@ -5,8 +5,8 @@ namespace TestEntities.Models
 
     class Constants 
     {
-        public const string Token = "dapiab6a39735333c23cc6c5d83064346865-2";  
-        public const string DatabricksBaseUrl = "https://adb-3129414294545315.15.azuredatabricks.net/";   
+        public const string Token = "<<>>>>";  
+        public const string DatabricksBaseUrl = "<<>>>>";   
     }
     public class CreateContextRequest
     {
