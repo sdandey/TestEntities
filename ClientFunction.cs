@@ -69,11 +69,10 @@ namespace Company.Function
             This should be call-in wait for all the objects to be created
             */
 
-            var entityKey = "";
 
             for (int i = 0; i < numberofContexts; i++)
             {
-                entityKey = "clusterId:" + clusterId + "|" + "contextId:" + i;
+                var entityKey = "clusterId:" + clusterId + "|" + "contextId:" + i;
                 var entity = new EntityId(nameof(ContextEntity), entityKey);
                 await durableEntityClient.SignalEntityAsync(entity, nameof(ContextEntity.SetCluster), entityKey);
             }
@@ -84,7 +83,7 @@ namespace Company.Function
             */
             for (int i = 0; i < numberofContexts; i++)
             {
-                entityKey = "clusterId:" + clusterId + "|" + "contextId:" + i;
+                var entityKey = "clusterId:" + clusterId + "|" + "contextId:" + i;
                 var entity = new EntityId(nameof(ContextEntity), entityKey);
                 durableEntityClient.SignalEntityAsync(entity, nameof(ContextEntity.CreateContext));
             }

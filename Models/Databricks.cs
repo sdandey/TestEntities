@@ -6,7 +6,7 @@ namespace TestEntities.Models
     class Constants 
     {
         public const string Token = "<<>>>>";  
-        public const string DatabricksBaseUrl = "<<>>>>";   
+        public const string DatabricksBaseUrl = "https://<databricks-instance>/api/1.2";   
     }
     public class CreateContextRequest
     {
